@@ -16,14 +16,14 @@ export default class extends React.Component{
         };
     }
 
-    handleClick(i){
-        const history = this.state.history.slice(0, this.state.stepNumber + 1);
-        const current = history[history.length - 1];
-        const squares = current.squares.slice();
+    async handleClick(i){
+        const squares = this.getCurrentBoard();
         if(this.calculateWinner(squares) || squares[i]){
             return;
         }
         squares[i] = this.state.xIsNext ? 'X' : 'O';
+        
+        const history = this.state.history.slice(0, this.state.stepNumber + 1);
 
         let all_history = history.concat([{
             squares: squares
@@ -32,11 +32,20 @@ export default class extends React.Component{
             all_history.shift();
         }
 
-        this.setState({
+        await this.setState({
             history: all_history,
             stepNumber: all_history.length -1,
             xIsNext: !this.state.xIsNext,
         });
+        this.comAction(squares);
+    }
+
+    //盤面
+    getCurrentBoard(){
+        const history = this.state.history.slice(0, this.state.stepNumber + 1);
+        const current = history[history.length - 1];
+        const squares = current.squares.slice();
+        return squares;
     }
 
     calculateWinner(squares){
@@ -66,6 +75,35 @@ export default class extends React.Component{
             xIsNext
         });
     }
+
+    //com action
+    comAction(squares){
+        if(this.calculateWinner(squares)) return;
+        let history = this.state.history.slice(0, this.state.stepNumber + 1);
+
+        //空いているマスを取得
+        const possible_hands = [];
+        let hand = squares.indexOf(null);
+        while(hand !== -1){
+            possible_hands.push(hand);
+            hand = squares.indexOf(null, hand + 1);
+        }
+       
+        //空いているマスがなければ終了
+        if(possible_hands.length === 0)return;
+        //空いているマスのうちランダムで1マス取得
+        const action_hand = possible_hands[Math.floor(Math.random()*possible_hands.length)];
+
+        //選択した手で盤面を更新
+        squares[action_hand] = this.state.xIsNext ? 'X' : 'O';
+        history[history.length - 1].squares = squares;
+
+        this.setState({
+            history,
+            xIsNext: !this.state.xIsNext,
+        });
+    }
+
 
     render(){
         const history = this.state.history;
